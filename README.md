@@ -26,12 +26,11 @@
     In Powershell:
         $ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-Link Github
-Data
-Importing Data
-Shap Library
-S3
-Visualize Data
-Matplotlib
-Split Datasets into train and test sets
-StoreTraining and validation data for model Training using scikit learn
+
+## Importing Data
+ ### Shap Library
+ ### S3
+## Visualize Data
+ ### Matplotlib
+## Split Datasets into train and test sets (80/20) 
+ ### Store Training and validation data using scikit learn
