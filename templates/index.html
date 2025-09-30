@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADDIS - AI-Powered Data Discrepancy Identification System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .station-card {
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .station-card:hover {
+            transform: translateY(-2px);
+        }
+        .loading {
+            display: none;
+        }
+        .loading.show {
+            display: block;
+        }
+        .chart-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .station-search-highlight {
+            background-color: #fff3cd;
+            font-weight: bold;
+        }
+        
+        .quick-select-btn {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .station-select-large {
+            font-size: 14px;
+        }
+        
+        .search-tips {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .anomaly-item {
+            border-left: 4px solid #dc3545;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+        }
+        .metric-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 10px 0;
+        }
+        .anomaly-header {
+            cursor: pointer;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .anomaly-header:hover {
+            background-color: #e9ecef;
+        }
+        .toggle-icon {
+            font-size: 0.8em;
+            transition: transform 0.3s ease;
+        }
+        .anomaly-summary {
+            padding: 5px 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .anomaly-explanation {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            margin-top: 10px;
+            border-radius: 0 5px 5px 0;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        .anomaly-explanation strong {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-brain"></i> ADDIS - AI-Powered Data Discrepancy Identification System
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="text-center">
+                    <i class="fas fa-brain"></i> ADDIS - AI-Powered Data Discrepancy Identification System
+                </h1>
+                <p class="text-center text-muted">
+                    Advanced AI system for identifying weather data discrepancies and anomalies using statistical methods
+                </p>
+            </div>
+        </div>
+
+        <!-- Station Selection -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-map-marker-alt"></i> Select Station</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="stationSearch" class="form-label">Search Weather Stations:</label>
+                                <div class="input-group mb-3">
+                                    <input type="text" id="stationSearch" class="form-control" placeholder="Search by station name, ID, or location..." onkeyup="filterStations()">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    <button class="btn btn-primary" type="button" onclick="quickSelectStation()">
+                                        <i class="fas fa-bolt"></i> Quick Select
+                                    </button>
+                                </div>
+                                <label for="stationSelect" class="form-label">Select Station:</label>
+                                <select id="stationSelect" class="form-select" onchange="loadStationData()" size="8">
+                                    <option value="">Select a station...</option>
+                                </select>
+                                <small class="text-muted" id="stationCount">Loading stations...</small>
+                            </div>
+                            <div class="col-md-6">
+                                <div id="stationInfo" class="mt-3" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-map-marker-alt"></i> Selected Station</h6>
+                                        <strong id="stationName"></strong><br>
+                                        <small id="stationDetails"></small>
+                                    </div>
+                                </div>
+                                <div class="search-tips">
+                                    <h6><i class="fas fa-info-circle"></i> Search Tips</h6>
+                                    <ul class="list-unstyled small text-muted">
+                                        <li><i class="fas fa-search"></i> Search by station name (e.g., "Miami")</li>
+                                        <li><i class="fas fa-search"></i> Search by station ID (e.g., "USC00086700")</li>
+                                        <li><i class="fas fa-search"></i> Search by state (e.g., "Florida", "FL")</li>
+                                        <li><i class="fas fa-search"></i> Search by city (e.g., "New York")</li>
+                                        <li><i class="fas fa-bolt"></i> Use "Quick Select" to automatically select the first match</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Range Selection -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-calendar-alt"></i> Analysis Period</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="startDate" class="form-label">Start Date:</label>
+                                <input type="date" id="startDate" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="endDate" class="form-label">End Date:</label>
+                                <input type="date" id="endDate" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="confidenceThreshold" class="form-label">Sensitivity:</label>
+                                <select id="confidenceThreshold" class="form-select">
+                                    <option value="0.5">Low (0.5)</option>
+                                    <option value="1.0" selected>Medium (1.0)</option>
+                                    <option value="1.5">High (1.5)</option>
+                                    <option value="2.0">Very High (2.0)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Station Management Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-download"></i> Station Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Download New Stations</h6>
+                                <div class="mb-3">
+                                    <label for="downloadStationSearch" class="form-label">Search Available Stations:</label>
+                                    <div class="input-group">
+                                        <input type="text" id="downloadStationSearch" class="form-control" placeholder="Search by name, ID, or location">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="searchAvailableStations()">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="countrySelect" class="form-label">Country:</label>
+                                    <select id="countrySelect" class="form-select">
+                                        <option value="US">United States</option>
+                                        <option value="CA">Canada</option>
+                                        <option value="MX">Mexico</option>
+                                    </select>
+                                </div>
+                                <div id="availableStations" class="mt-3" style="display: none;">
+                                    <h6>Available Stations:</h6>
+                                    <div id="stationsList" class="list-group" style="max-height: 300px; overflow-y: auto;"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Station Actions</h6>
+                                <div class="d-grid gap-2">
+                                    <button id="loadExisting" class="btn btn-info" onclick="loadExistingStations()">
+                                        <i class="fas fa-folder-open"></i> Load Existing Stations
+                                    </button>
+                                    <button id="downloadSelected" class="btn btn-success" onclick="downloadSelectedStations()" disabled>
+                                        <i class="fas fa-download"></i> Download Selected Stations
+                                    </button>
+                                </div>
+                                <div id="downloadProgress" class="mt-3" style="display: none;">
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted">Downloading station data...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Run Analysis Button -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <button id="runAnalysis" class="btn btn-success btn-lg" onclick="runAnomalyDetection()" disabled>
+                    <i class="fas fa-brain"></i> Run ADDIS Analysis
+                </button>
+                <button id="viewFlags" class="btn btn-info btn-lg ms-3" onclick="viewGHCNFlags()" disabled>
+                    <i class="fas fa-flag"></i> View GHCN Quality Flags
+                </button>
+                <div id="loadingSpinner" class="loading mt-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">ADDIS is fetching historical data from NCEI and analyzing for discrepancies...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" style="display: none;">
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="metric-card text-center">
+                        <h3 class="text-primary" id="totalAnomalies">0</h3>
+                        <p class="text-muted">Total Anomalies</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card text-center">
+                        <h3 class="text-success" id="dataQuality">0%</h3>
+                        <p class="text-muted">Data Quality Score</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card text-center">
+                        <h3 class="text-info" id="analysisPeriod">-</h3>
+                        <p class="text-muted">Analysis Period</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card text-center">
+                        <h3 class="text-warning" id="confidenceLevel">-</h3>
+                        <p class="text-muted">Sensitivity Level</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualizations -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-line"></i> Visualizations</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="visualizations"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anomaly Details -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-exclamation-triangle"></i> ADDIS Detected Discrepancies</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="anomaliesList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentReport = null;
+        let stations = [];
+
+        // Load stations on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStations();
+        });
+
+        async function loadStations() {
+            console.log('loadStations called - using dynamic search');
+            
+            // Initialize with empty array - stations will be loaded dynamically
+            allStations = [];
+            stations = [];
+            filteredStations = [];
+            
+            // Update the dropdown to show search prompt
+            const stationSelect = document.getElementById('stationSelect');
+            stationSelect.innerHTML = '<option value="">Search for a station above...</option>';
+            
+            // Update count
+            document.getElementById('stationCount').textContent = 'Use search box to find stations';
+            
+            console.log('Dynamic search initialized - ready for user input');
+        }
+
+        async function loadStationData() {
+            console.log('loadStationData called');
+            const stationId = document.getElementById('stationSelect').value;
+            console.log('Selected station ID:', stationId);
+            
+            if (!stationId) {
+                document.getElementById('stationInfo').style.display = 'none';
+                document.getElementById('runAnalysis').disabled = true;
+                return;
+            }
+            
+            try {
+                // Show loading message
+                document.getElementById('stationInfo').style.display = 'block';
+                document.getElementById('stationName').textContent = 'Loading station data...';
+                document.getElementById('stationDetails').textContent = 'Fetching data from NCEI...';
+                
+                // Fetch station data dynamically from NCEI
+                const response = await fetch(`/api/stations/${stationId}/fetch`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Error loading station data:', data.error);
+                    document.getElementById('stationName').textContent = 'Error loading station';
+                    document.getElementById('stationDetails').textContent = data.error;
+                    return;
+                }
+                
+                // Update station info with fetched data
+                const station = allStations.find(s => s.id === stationId) || filteredStations.find(s => s.id === stationId);
+                console.log('Found station:', station);
+                
+                if (station) {
+                    document.getElementById('stationName').textContent = station.name;
+                    document.getElementById('stationDetails').textContent = 
+                        `Lat: ${station.latitude}° | Lon: ${station.longitude}° | Records: ${data.total_records}`;
+                } else {
+                    document.getElementById('stationName').textContent = stationId;
+                    document.getElementById('stationDetails').textContent = `Records: ${data.total_records}`;
+                }
+                
+                // Set date range
+                document.getElementById('startDate').value = data.date_range.start;
+                document.getElementById('endDate').value = data.date_range.end;
+                
+                // Enable buttons
+                console.log('Enabling buttons');
+                document.getElementById('runAnalysis').disabled = false;
+                document.getElementById('viewFlags').disabled = false;
+                console.log('Buttons enabled');
+                
+            } catch (error) {
+                console.error('Error loading station data:', error);
+                document.getElementById('stationName').textContent = 'Error loading station';
+                document.getElementById('stationDetails').textContent = 'Failed to fetch data from NCEI';
+            }
+        }
+
+        // Station Search Functions
+        let allStations = [];
+        let filteredStations = [];
+        
+        async function filterStations() {
+            const searchTerm = document.getElementById('stationSearch').value.toLowerCase();
+            const stationSelect = document.getElementById('stationSelect');
+            const stationCount = document.getElementById('stationCount');
+            
+            if (!searchTerm) {
+                // Clear dropdown
+                stationSelect.innerHTML = '<option value="">Search for a station above...</option>';
+                stationCount.textContent = 'Use search box to find stations';
+                return;
+            }
+            
+            // Show loading
+            stationCount.textContent = 'Searching stations...';
+            
+            try {
+                // Search stations dynamically
+                const response = await fetch(`/api/stations/search?q=${encodeURIComponent(searchTerm)}&country=US&limit=20`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    stationCount.textContent = `Error: ${data.error}`;
+                    return;
+                }
+                
+                // Update stations
+                allStations = data.stations;
+                filteredStations = data.stations;
+                
+                // Update dropdown
+                stationSelect.innerHTML = '<option value="">Select a station...</option>';
+                filteredStations.forEach(station => {
+                    const option = document.createElement('option');
+                    option.value = station.id;
+                    option.textContent = `${station.id} - ${station.name}`;
+                    stationSelect.appendChild(option);
+                });
+                
+                // Update count
+                stationCount.textContent = `Found ${filteredStations.length} stations matching "${searchTerm}"`;
+                
+                // Clear station info if no stations match
+                if (filteredStations.length === 0) {
+                    document.getElementById('stationInfo').style.display = 'none';
+                    document.getElementById('runAnalysis').disabled = true;
+                    document.getElementById('viewFlags').disabled = true;
+                }
+                
+            } catch (error) {
+                console.error('Error searching stations:', error);
+                stationCount.textContent = 'Error searching stations';
+            }
+        }
+        
+        function clearSearch() {
+            document.getElementById('stationSearch').value = '';
+            filterStations();
+        }
+        
+        async function quickSelectStation() {
+            const searchTerm = document.getElementById('stationSearch').value.trim();
+            
+            if (!searchTerm) {
+                alert('Please enter a search term first');
+                return;
+            }
+            
+            try {
+                // Show loading
+                document.getElementById('stationCount').textContent = 'Searching and fetching data...';
+                
+                // Use search-and-fetch API to find and load station data
+                const response = await fetch(`/api/stations/search-and-fetch?q=${encodeURIComponent(searchTerm)}&country=US`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(`Error: ${data.error}`);
+                    return;
+                }
+                
+                if (!data.stations || data.stations.length === 0) {
+                    alert(`No stations found matching "${searchTerm}"`);
+                    return;
+                }
+                
+                // Update stations arrays
+                allStations = data.stations;
+                filteredStations = data.stations;
+                
+                // Update dropdown
+                const stationSelect = document.getElementById('stationSelect');
+                stationSelect.innerHTML = '<option value="">Select a station...</option>';
+                filteredStations.forEach(station => {
+                    const option = document.createElement('option');
+                    option.value = station.id;
+                    option.textContent = `${station.id} - ${station.name}`;
+                    stationSelect.appendChild(option);
+                });
+                
+                // Select the first station
+                const selectedStation = data.selected_station;
+                stationSelect.value = selectedStation.id;
+                
+                // Update station info
+                document.getElementById('stationName').textContent = selectedStation.name;
+                document.getElementById('stationDetails').textContent = 
+                    `Lat: ${selectedStation.latitude}° | Lon: ${selectedStation.longitude}° | Records: ${data.total_records}`;
+                document.getElementById('stationInfo').style.display = 'block';
+                
+                // Set date range
+                document.getElementById('startDate').value = data.date_range.start;
+                document.getElementById('endDate').value = data.date_range.end;
+                
+                // Enable buttons
+                document.getElementById('runAnalysis').disabled = false;
+                document.getElementById('viewFlags').disabled = false;
+                
+                // Update count
+                document.getElementById('stationCount').textContent = `Found and loaded ${data.total_records} records for ${selectedStation.name}`;
+                
+                // Clear search
+                document.getElementById('stationSearch').value = '';
+                
+                // Scroll to results
+                document.getElementById('runAnalysis').scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('Error in quick select:', error);
+                alert('Error searching and fetching station data');
+            }
+        }
+        
+        // Station Management Functions
+        let selectedStations = [];
+        let availableStationsData = [];
+
+        async function searchAvailableStations() {
+            const searchTerm = document.getElementById('downloadStationSearch').value;
+            const country = document.getElementById('countrySelect').value;
+            
+            try {
+                const response = await fetch(`/api/stations/available?country=${country}&limit=100`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(`Error: ${data.error}`);
+                    return;
+                }
+                
+                availableStationsData = data.stations;
+                displayAvailableStations(searchTerm);
+                
+            } catch (error) {
+                console.error('Error searching stations:', error);
+                alert('Error searching for stations');
+            }
+        }
+
+        function displayAvailableStations(searchTerm) {
+            const stationsList = document.getElementById('stationsList');
+            const availableStationsDiv = document.getElementById('availableStations');
+            
+            // Filter stations based on search term
+            let filteredStations = availableStationsData;
+            if (searchTerm) {
+                filteredStations = availableStationsData.filter(station => 
+                    station.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    station.id.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
+            
+            // Display stations
+            stationsList.innerHTML = '';
+            filteredStations.forEach(station => {
+                const stationItem = document.createElement('div');
+                stationItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                stationItem.innerHTML = `
+                    <div>
+                        <strong>${station.id}</strong> - ${station.name}
+                        <br><small class="text-muted">
+                            ${station.state || 'Unknown State'} | 
+                            Lat: ${station.latitude || 'N/A'}° | 
+                            Lon: ${station.longitude || 'N/A'}°
+                        </small>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="${station.id}" 
+                               onchange="toggleStationSelection('${station.id}')">
+                    </div>
+                `;
+                stationsList.appendChild(stationItem);
+            });
+            
+            availableStationsDiv.style.display = 'block';
+        }
+
+        function toggleStationSelection(stationId) {
+            const checkbox = document.querySelector(`input[value="${stationId}"]`);
+            
+            if (checkbox.checked) {
+                if (!selectedStations.includes(stationId)) {
+                    selectedStations.push(stationId);
+                }
+            } else {
+                selectedStations = selectedStations.filter(id => id !== stationId);
+            }
+            
+            // Enable/disable download button
+            document.getElementById('downloadSelected').disabled = selectedStations.length === 0;
+        }
+
+        async function downloadSelectedStations() {
+            if (selectedStations.length === 0) {
+                alert('Please select at least one station to download');
+                return;
+            }
+            
+            const downloadProgress = document.getElementById('downloadProgress');
+            const progressBar = downloadProgress.querySelector('.progress-bar');
+            
+            // Show progress
+            downloadProgress.style.display = 'block';
+            progressBar.style.width = '0%';
+            
+            try {
+                const response = await fetch('/api/stations/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        station_ids: selectedStations
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    progressBar.style.width = '100%';
+                    
+                    // Show success message
+                    alert(`Successfully downloaded ${data.downloaded_stations.length} stations!\n\n` +
+                          `Total records: ${data.summary.total_records}\n` +
+                          `Date range: ${data.summary.date_range.start} to ${data.summary.date_range.end}`);
+                    
+                    // Refresh station list
+                    await loadStations();
+                    
+                    // Clear selections
+                    selectedStations = [];
+                    document.getElementById('downloadSelected').disabled = true;
+                    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+                    
+                } else {
+                    alert(`Download failed: ${data.error}`);
+                }
+                
+            } catch (error) {
+                console.error('Error downloading stations:', error);
+                alert('Error downloading stations');
+            } finally {
+                setTimeout(() => {
+                    downloadProgress.style.display = 'none';
+                    progressBar.style.width = '0%';
+                }, 2000);
+            }
+        }
+
+        async function loadExistingStations() {
+            try {
+                const response = await fetch('/api/stations/load-existing');
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`Successfully loaded existing stations!\n\n${data.message}`);
+                    
+                    // Refresh station list
+                    await loadStations();
+                    
+                } else {
+                    alert(`Error loading existing stations: ${data.error}`);
+                }
+                
+            } catch (error) {
+                console.error('Error loading existing stations:', error);
+                alert('Error loading existing stations');
+            }
+        }
+
+        async function runAnomalyDetection() {
+            console.log('runAnomalyDetection called');
+            const stationId = document.getElementById('stationSelect').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const confidenceThreshold = parseFloat(document.getElementById('confidenceThreshold').value);
+            
+            console.log('Values:', { stationId, startDate, endDate, confidenceThreshold });
+            
+            if (!stationId || !startDate || !endDate) {
+                alert('Please select a station and date range');
+                return;
+            }
+            
+            // Show loading spinner
+            document.getElementById('loadingSpinner').classList.add('show');
+            document.getElementById('runAnalysis').disabled = true;
+            
+            try {
+                const response = await fetch('/api/comprehensive-anomaly-detection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        station_id: stationId,
+                        start_date: startDate,
+                        end_date: endDate,
+                        confidence_threshold: confidenceThreshold
+                    })
+                });
+                
+                const report = await response.json();
+                
+                if (report.error) {
+                    alert('Error: ' + report.error);
+                    return;
+                }
+                
+                currentReport = report;
+                displayComprehensiveResults(report);
+                
+            } catch (error) {
+                console.error('Error running anomaly detection:', error);
+                alert('Error running anomaly detection: ' + error.message);
+            } finally {
+                document.getElementById('loadingSpinner').classList.remove('show');
+                document.getElementById('runAnalysis').disabled = false;
+                document.getElementById('viewFlags').disabled = false;
+            }
+        }
+
+        function displayResults(report) {
+            console.log('displayResults called with report:', report);
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Update summary cards
+            document.getElementById('totalAnomalies').textContent = report.summary.total_anomalies || 0;
+            document.getElementById('dataQuality').textContent = 
+                Math.round(report.summary.data_quality_score || 0) + '%';
+            document.getElementById('analysisPeriod').textContent =
+                `${report.data_summary.date_range.start} to ${report.data_summary.date_range.end}`;
+            document.getElementById('confidenceLevel').textContent =
+                report.summary.confidence_threshold || 'N/A';
+            
+            // Show NCEI data source information
+            if (report.summary.data_source === 'NCEI') {
+                const nceiInfo = document.createElement('div');
+                nceiInfo.className = 'alert alert-info mt-3';
+                nceiInfo.innerHTML = `
+                    <strong>📡 Data Source:</strong> NCEI (National Centers for Environmental Information)<br>
+                    <strong>📊 Baseline Data Points:</strong> ${report.summary.baseline_data_points.toLocaleString()}<br>
+                    <strong>🔍 Analysis Data Points:</strong> ${report.summary.analysis_data_points.toLocaleString()}
+                `;
+                document.getElementById('resultsSection').appendChild(nceiInfo);
+            }
+            
+            // Display visualizations
+            displayVisualizations(report.visualizations);
+            
+            // Display anomalies
+            displayAnomalies(report.anomalies);
+        }
+
+        function displayVisualizations(visualizations) {
+            const container = document.getElementById('visualizations');
+            container.innerHTML = '';
+            
+            Object.keys(visualizations).forEach(key => {
+                const div = document.createElement('div');
+                div.className = 'chart-container';
+                div.innerHTML = `<img src="data:image/png;base64,${visualizations[key]}" alt="${key}">`;
+                container.appendChild(div);
+            });
+        }
+
+        function displayAnomalies(anomalies) {
+            const container = document.getElementById('anomaliesList');
+            
+            if (anomalies.statistical && anomalies.statistical.count > 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <strong>${anomalies.statistical.count}</strong> data discrepancies detected by ADDIS
+                    </div>
+                `;
+                
+                anomalies.statistical.anomalies.forEach(anomaly => {
+                    const div = document.createElement('div');
+                    div.className = 'anomaly-item';
+                    
+                    // Create collapsible explanation
+                    const explanationId = `explanation-${anomaly.DATE.replace(/-/g, '')}-${anomaly.VARIABLE}`;
+                    
+                    div.innerHTML = `
+                        <div class="anomaly-header" onclick="toggleExplanation('${explanationId}')">
+                            <strong>${anomaly.DATE}</strong> - ${anomaly.TYPE} Anomaly
+                            <span class="toggle-icon" id="icon-${explanationId}">▼</span>
+                        </div>
+                        <div class="anomaly-summary">
+                            <strong>${anomaly.VARIABLE}:</strong> ${anomaly.VALUE.toFixed(2)}
+                            ${anomaly.Z_SCORE ? ` | Z-Score: ${anomaly.Z_SCORE.toFixed(2)}` : ''}
+                            ${anomaly.THRESHOLD ? ` | Threshold: ${anomaly.THRESHOLD.toFixed(2)}` : ''}
+                        </div>
+                        <div class="anomaly-explanation" id="${explanationId}" style="display: none;">
+                            <div class="explanation-content">
+                                <p><strong>Statistical Analysis:</strong></p>
+                                <p>${anomaly.EXPLANATION || 'No detailed explanation available.'}</p>
+                                
+                                <p><strong>Statistical Details:</strong></p>
+                                <ul>
+                                    <li>Z-Score: ${anomaly.Z_SCORE ? anomaly.Z_SCORE.toFixed(2) : 'N/A'}</li>
+                                    <li>Threshold: ${anomaly.THRESHOLD ? anomaly.THRESHOLD.toFixed(2) : 'N/A'}</li>
+                                    <li>Baseline Mean: ${anomaly.STATISTICS && anomaly.STATISTICS.mean ? anomaly.STATISTICS.mean.toFixed(1) : 'N/A'}°F</li>
+                                    <li>Baseline Std Dev: ${anomaly.STATISTICS && anomaly.STATISTICS.std ? anomaly.STATISTICS.std.toFixed(1) : 'N/A'}°F</li>
+                                    <li>Baseline Sample Size: ${anomaly.STATISTICS && anomaly.STATISTICS.baseline_sample_size ? anomaly.STATISTICS.baseline_sample_size : 'N/A'}</li>
+                                </ul>
+                                
+                                ${anomaly.GHCN_QUALITY ? `
+                                <p><strong>GHCN Quality Control:</strong></p>
+                                <ul>
+                                    <li>Quality Score: ${anomaly.GHCN_QUALITY.quality_score ? anomaly.GHCN_QUALITY.quality_score.toFixed(1) : 'N/A'}/100</li>
+                                    <li>Quality Flag: ${anomaly.GHCN_QUALITY.quality_flag || 'None (Passed all checks)'}</li>
+                                    <li>Source Flag: ${anomaly.GHCN_QUALITY.source_flag || 'Unknown'}</li>
+                                    <li>Has Quality Issue: ${anomaly.GHCN_QUALITY.has_quality_issue ? 'Yes' : 'No'}</li>
+                                    <li>High Quality Source: ${anomaly.GHCN_QUALITY.is_high_quality_source ? 'Yes' : 'No'}</li>
+                                </ul>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = '<div class="alert alert-success">No data discrepancies detected by ADDIS</div>';
+            }
+        }
+        
+        function displayComprehensiveResults(report) {
+            console.log('displayComprehensiveResults called with report:', report);
+            
+            const resultsDiv = document.getElementById('resultsSection');
+            const summary = report.summary;
+            const anomalies = report.anomalies.comprehensive.anomalies;
+            const elementSummaries = report.element_summaries;
+            
+            let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-line"></i> ADDIS Comprehensive Weather Analysis</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h6>Analysis Summary</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Station:</strong> ${summary.station_id}</li>
+                                    <li><strong>Period:</strong> ${summary.analysis_period}</li>
+                                    <li><strong>Total Records:</strong> ${summary.total_records}</li>
+                                    <li><strong>Total Anomalies:</strong> ${summary.total_anomalies}</li>
+                                    <li><strong>Elements Analyzed:</strong> ${summary.elements_analyzed.join(', ')}</li>
+                                    <li><strong>Elements with Anomalies:</strong> ${summary.elements_with_anomalies.join(', ')}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Weather Elements Summary</h6>
+                                <ul class="list-unstyled">
+            `;
+            
+            // Add element summaries
+            for (const [element, summary] of Object.entries(elementSummaries)) {
+                html += `
+                    <li><strong>${element}:</strong> ${summary.total_records} records, ${summary.anomalies_detected} anomalies</li>
+                `;
+            }
+            
+            html += `
+                                </ul>
+                            </div>
+                        </div>
+            `;
+            
+            if (anomalies.length > 0) {
+                html += `
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Element</th>
+                                    <th>Type</th>
+                                    <th>Value</th>
+                                    <th>Z-Score</th>
+                                    <th>Severity</th>
+                                    <th>Explanation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                anomalies.forEach(anomaly => {
+                    html += `
+                        <tr>
+                            <td>${anomaly.DATE}</td>
+                            <td>${anomaly.element}</td>
+                            <td>${anomaly.anomaly_type}</td>
+                            <td>${anomaly.value}</td>
+                            <td>${anomaly.z_score.toFixed(2)}</td>
+                            <td><span class="badge badge-${anomaly.severity === 'extreme' ? 'danger' : anomaly.severity === 'moderate' ? 'warning' : 'info'}">${anomaly.severity}</span></td>
+                            <td>
+                                <div class="anomaly-explanation">
+                                    <button class="btn btn-sm btn-outline-info" onclick="toggleExplanation('${anomaly.DATE}-${anomaly.element}')">
+                                        <i class="fas fa-info-circle"></i> View Details
+                                    </button>
+                                    <div id="explanation-${anomaly.DATE}-${anomaly.element}" class="explanation-content" style="display: none;">
+                                        <div class="mt-2 p-2 bg-light rounded">
+                                            ${anomaly.explanation}
+                                            <div class="mt-2">
+                                                <strong>Baseline Statistics:</strong>
+                                                <ul class="list-unstyled small">
+                                                    <li>Mean: ${anomaly.baseline.mean.toFixed(1)}</li>
+                                                    <li>Std Dev: ${anomaly.baseline.std.toFixed(1)}</li>
+                                                    <li>Min: ${anomaly.baseline.min.toFixed(1)}</li>
+                                                    <li>Max: ${anomaly.baseline.max.toFixed(1)}</li>
+                                                    <li>Sample Size: ${anomaly.baseline.sample_size}</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> No weather anomalies detected by ADDIS
+                    </div>
+                `;
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+
+        function toggleExplanation(explanationId) {
+            const explanation = document.getElementById(explanationId);
+            const icon = document.getElementById(`icon-${explanationId}`);
+            
+            if (explanation.style.display === 'none') {
+                explanation.style.display = 'block';
+                icon.textContent = '▲';
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                explanation.style.display = 'none';
+                icon.textContent = '▼';
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        function viewGHCNFlags() {
+            const stationId = document.getElementById('stationSelect').value;
+            if (!stationId) {
+                alert('Please select a station first.');
+                return;
+            }
+            
+            // Show loading
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            loadingSpinner.style.display = 'block';
+            
+            fetch(`/api/station/${stationId}/ghcn-flags`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingSpinner.style.display = 'none';
+                    
+                    if (data.error) {
+                        alert(`Error: ${data.error}`);
+                        return;
+                    }
+                    
+                    displayGHCNFlags(data);
+                })
+                .catch(error => {
+                    loadingSpinner.style.display = 'none';
+                    console.error('Error:', error);
+                    alert('Error fetching GHCN flags data.');
+                });
+        }
+        
+        function displayGHCNFlags(data) {
+            const container = document.getElementById('resultsSection');
+            
+            let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-flag"></i> GHCN Quality Control Flags - ${data.station_id}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Overall Summary</h6>
+                                <ul>
+                                    <li>Total Records: ${data.total_records}</li>
+                                    <li>Elements Processed: ${data.flag_summary.elements_processed ? data.flag_summary.elements_processed.join(', ') : 'None'}</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Overall Quality</h6>
+                                <ul>
+                                    <li>Average Quality Score: ${data.flag_summary.overall_quality ? data.flag_summary.overall_quality.average_quality_score.toFixed(1) : 'N/A'}/100</li>
+                                    <li>Min Quality Score: ${data.flag_summary.overall_quality ? data.flag_summary.overall_quality.min_quality_score.toFixed(1) : 'N/A'}/100</li>
+                                    <li>Max Quality Score: ${data.flag_summary.overall_quality ? data.flag_summary.overall_quality.max_quality_score.toFixed(1) : 'N/A'}/100</li>
+                                </ul>
+                            </div>
+                        </div>
+            `;
+            
+            // Add element-specific details
+            if (data.flag_details) {
+                Object.keys(data.flag_details).forEach(element => {
+                    const details = data.flag_details[element];
+                    html += `
+                        <div class="mt-4">
+                            <h6>${element} (${element === 'PRCP' ? 'Precipitation' : element === 'TMAX' ? 'Maximum Temperature' : 'Minimum Temperature'})</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h6>Quality Statistics</h6>
+                                    <ul>
+                                        <li>Records: ${details.total_records}</li>
+                                        <li>Avg Quality: ${details.quality_score_stats.mean.toFixed(1)}/100</li>
+                                        <li>Min Quality: ${details.quality_score_stats.min.toFixed(1)}/100</li>
+                                        <li>Max Quality: ${details.quality_score_stats.max.toFixed(1)}/100</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>Quality Flags</h6>
+                                    <ul>
+                                        ${Object.keys(details.quality_flags).map(flag => 
+                                            `<li>${flag || 'Blank (Passed)'}: ${details.quality_flags[flag]} records</li>`
+                                        ).join('')}
+                                    </ul>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>Source Flags</h6>
+                                    <ul>
+                                        ${Object.keys(details.source_flags).map(flag => 
+                                            `<li>${flag || 'Unknown'}: ${details.source_flags[flag]} records</li>`
+                                        ).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

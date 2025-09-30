@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ADDIS Test</title>
+</head>
+<body>
+    <h1>ADDIS Test Page</h1>
+    
+    <div>
+        <label>Station:</label>
+        <select id="stationSelect">
+            <option value="">Select station...</option>
+            <option value="USC00086700">USC00086700</option>
+        </select>
+    </div>
+    
+    <div>
+        <label>Start Date:</label>
+        <input type="date" id="startDate" value="1892-01-01">
+    </div>
+    
+    <div>
+        <label>End Date:</label>
+        <input type="date" id="endDate" value="1892-12-31">
+    </div>
+    
+    <div>
+        <label>Sensitivity:</label>
+        <select id="confidenceThreshold">
+            <option value="0.5">Low (0.5)</option>
+            <option value="1.0" selected>Medium (1.0)</option>
+            <option value="1.5">High (1.5)</option>
+            <option value="2.0">Very High (2.0)</option>
+        </select>
+    </div>
+    
+    <button id="runAnalysis" onclick="testAnomalyDetection()">Run ADDIS Analysis</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function testAnomalyDetection() {
+            const stationId = document.getElementById('stationSelect').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const confidenceThreshold = parseFloat(document.getElementById('confidenceThreshold').value);
+            
+            console.log('Station ID:', stationId);
+            console.log('Start Date:', startDate);
+            console.log('End Date:', endDate);
+            console.log('Confidence Threshold:', confidenceThreshold);
+            
+            if (!stationId || !startDate || !endDate) {
+                alert('Please select a station and date range');
+                return;
+            }
+            
+            try {
+                console.log('Making API call...');
+                const response = await fetch('/api/anomaly-detection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        station_id: stationId,
+                        start_date: startDate,
+                        end_date: endDate,
+                        confidence_threshold: confidenceThreshold
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                const report = await response.json();
+                console.log('Report:', report);
+                
+                if (report.error) {
+                    alert('Error: ' + report.error);
+                    return;
+                }
+                
+                document.getElementById('results').innerHTML = 
+                    '<h3>Results:</h3>' +
+                    '<p>Total Anomalies: ' + report.summary.total_anomalies + '</p>' +
+                    '<p>Data Quality Score: ' + report.summary.data_quality_score + '</p>';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
