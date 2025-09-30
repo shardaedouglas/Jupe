@@ -188,32 +188,13 @@ python demo_app.py
 - **User Feedback:** Provide feedback on usability and features
 - **Documentation:** Contribute to scientific documentation
 
-## Support and Contact
+## Support
 
 ### Documentation
 - **Scientific Documentation:** Complete methodology and validation reports
 - **Technical Documentation:** Architecture and implementation details
 - **User Guides:** Step-by-step usage instructions
 - **API Documentation:** Complete API reference
-
-### Community
-- **GitHub Repository:** Source code and issue tracking
-- **Discussion Forums:** Community discussions and support
-- **Research Collaboration:** Opportunities for research collaboration
-- **Training Materials:** Educational resources and tutorials
-
-## License and Citation
-
-### License
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-### Citation
-If you use ADDIS in your research, please cite:
-
-```
-Douglas, S. (2025). ADDIS: AI-Powered Data Discrepancy Identification System. 
-AI-Powered Weather Data Anomaly Detection Platform. Version 1.0.
-```
 
 ## Acknowledgments
 
