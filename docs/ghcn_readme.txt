@@ -626,4 +626,4 @@ Data and metadata available at http://eca.knmi.nl
 
 
 
-For additional information, please send an e-mail to ncdc.ghcnd@noaa.gov.
+For additional information, please send an e-mail to ncdc.ghcnd@noaa.gov..

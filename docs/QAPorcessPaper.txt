@@ -246,4 +246,4 @@ Thorne, P. W., and Coauthors, 2011: Guiding the creation of a comprehensive surf
 Trenberth, K. E., and Coauthors, 2007: Observations: Surface and atmospheric climate change. Climate Change 2007: The Physical Science Basis, S. Solomon et al., Eds., Cambridge University Press, 235–336. 
 Vose, R. S., R. L. Schmoyer, P. M. Steurer, T. C. Peterson, R. Heim, T. R. Karl, and J. K. Eischeid, 1992: The Global Historical Climatology Network: Long-term monthly tem perature, precipitation, sea level pressure, and station pressure data. Oak Ridge National Laboratory Environmental Sci ences Division Publ. 3912, 324 pp. 
 WMO, 2003: Manual on the Global Observing System: Volume 1—Global aspects. World Meteorological Organization Doc ument WMO 544, 58 pp. 
-You, J., and K. G. Hubbard, 2006: Quality control of weather data during extreme events. J. Atmos. Oceanic Technol., 23, 184–197.
+You, J., and K. G. Hubbard, 2006: Quality control of weather data during extreme events. J. Atmos. Oceanic Technol., 23, 184–197..
